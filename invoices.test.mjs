@@ -6,6 +6,11 @@ const { createInvoice, toCents, fee, ApiError } = await import('./invoices.mjs')
 const H = { authorization: 'Bearer sk_test_unit_1234' }
 const inv = (line_items) => createInvoice(H, { customer_name: 'Test Co', customer_email: 'a@test.example', currency: 'usd', line_items })
 
+test('invoices fractional-dollar amounts without truncating cents', () => {
+  const i = inv([{ description: 'Croissants', amount: 58.5 }, { description: 'Biscuits', amount: 36 }])
+  assert.equal(i.subtotal_cents, 9450)
+})
+
 test('invoices whole-dollar line items', () => {
   const i = inv([{ description: 'Website redesign', amount: 1200 }])
   assert.equal(i.status, 'open')
