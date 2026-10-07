@@ -34,6 +34,12 @@ td.amt{font-weight:650;font-variant-numeric:tabular-nums;text-align:right}th.amt
 tr.new{animation:arrive 2.6s ease}@keyframes arrive{0%{background:#ffe2c2;transform:translateY(-6px);opacity:0}15%{opacity:1;transform:none}100%{background:transparent}}
 .inc{margin-bottom:20px;border-color:#f6c9c4}.inc h2{color:var(--err);background:var(--err-soft)}
 .inc td{font-size:13px}.inc code{font:12px var(--mono)}.inc a{color:var(--open);font-weight:600}
+.pill.failed{background:var(--err);color:#fff}.pill.recovered{background:var(--ok);color:#fff}
+tr.failed td{background:var(--err-soft)}tr.failed td:first-child{box-shadow:inset 4px 0 0 var(--err)}
+tr.recovered td{background:var(--ok-soft)}tr.recovered td:first-child{box-shadow:inset 4px 0 0 var(--ok)}
+tr.failed .num,tr.recovered .num{font-size:11.5px}.why{display:block;font-size:12px;margin-top:3px;color:var(--mute)}.why a{color:var(--open);font-weight:600;text-decoration:none}
+.retry{display:inline-block;margin-left:6px;font:600 11px var(--mono);color:var(--ok);background:var(--ok-soft);border-radius:5px;padding:1px 6px}
+tr.flash td{background:#c9f0d8}
 .toast{position:fixed;right:22px;bottom:22px;background:#1f1a14;color:#fff;border-radius:12px;padding:12px 16px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;gap:10px;align-items:center;transform:translateY(120%);transition:transform .35s;max-width:420px}
 .toast.show{transform:none}.toast b{color:#ffb469}
 @media(max-width:860px){.app{grid-template-columns:1fr}aside{display:none}.kpis{grid-template-columns:1fr 1fr}main{padding:18px 16px}.hide-s{display:none}}
@@ -52,11 +58,26 @@ const money=(c,cur='usd')=>new Intl.NumberFormat('en-US',{style:'currency',curre
 const ago=d=>{const s=(Date.now()-new Date(d))/1000;if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+' min ago';if(s<86400)return Math.floor(s/3600)+' h ago';return new Date(d).toLocaleDateString([], {month:'short',day:'numeric'})};
 let seen=null,seenInc=new Set(),tt;
 function toast(h){const t=document.getElementById('toast');t.innerHTML=h;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),5000)}
+// A 500 on POST /v1/invoices shows as a red row in the invoice table. Once an invoice for the same customer
+// (email, else name) is created after the failure, i.e. the agent's retry succeeded, the row turns green.
+function failedRows(ic,inv){return ic.filter(x=>String(x.endpoint||'').includes('POST /v1/invoices')).map(x=>{const r=x.request||{},em=String(r.customer_email||'').toLowerCase(),nm=String(r.customer_name||'').toLowerCase();
+ const m=(em||nm)?inv.filter(i=>String(i.created)>String(x.at)&&(em?String(i.customer_email||'').toLowerCase()===em:String(i.customer_name||'').toLowerCase()===nm)).sort((a,b)=>String(a.created).localeCompare(String(b.created)))[0]:null;
+ return {x,r,inv:m||null}})}
+function failRow({x,r,inv}){const ok=!!inv,room=x.room_url?' · <a href="'+E(x.room_url)+'" target="_blank">Support room ↗</a>':'';
+ return '<tr class="'+(ok?'recovered':'failed')+'"><td class="num"><code>'+E(x.request_id)+'</code></td><td class="cust"><b>'+E(r.customer_name||'Unknown customer')+'</b><span>'+E(r.customer_email||x.endpoint)+'</span></td><td class="amt">'+(r.amount_cents?money(r.amount_cents,r.currency||'usd'):'—')+'</td><td>'+
+ (ok?'<span class="pill recovered">Recovered ✓</span><span class="why">Succeeded on retry: <a href="#'+E(inv.id)+'">'+E(inv.number)+' →</a>'+room+'</span>'
+    :'<span class="pill failed">Failed · HTTP 500</span><span class="why">internal_error'+room+'</span>')+
+ '</td><td class="when hide-s">'+ago(x.at)+'</td></tr>'}
+addEventListener('hashchange',()=>hl(location.hash.slice(1)));
+let flashId=null,flashUntil=0;function hl(id){flashId=id;flashUntil=Date.now()+2500;const t=document.getElementById(id);if(t)t.classList.add('flash')}
 async function tick(){try{const j=await(await fetch('/dashboard/feed',{cache:'no-store'})).json();
  document.getElementById('build').textContent='build '+String(j.sha).slice(0,7);
  const inv=j.invoices,first=seen===null;seen=seen||new Set(inv.map(i=>i.id));
  const fresh=inv.filter(i=>!seen.has(i.id));
- document.getElementById('rows').innerHTML=inv.map(i=>'<tr class="'+(fresh.includes(i)?'new':'')+'"><td class="num">'+E(i.number)+'</td><td class="cust"><b>'+E(i.customer_name)+'</b><span>'+E(i.customer_email)+'</span></td><td class="amt">'+money(i.total_cents,i.currency)+'</td><td><span class="pill '+E(i.status)+'">'+E(i.status[0].toUpperCase()+i.status.slice(1))+'</span></td><td class="when hide-s">'+ago(i.created)+'</td></tr>').join('');
+ const fails=failedRows(j.incidents||[],inv),retryOf={};for(const f of fails)if(f.inv)(retryOf[f.inv.id]??=f.x.request_id);
+ const invRow=i=>'<tr id="'+E(i.id)+'" class="'+(fresh.includes(i)?'new':'')+(i.id===flashId&&Date.now()<flashUntil?' flash':'')+'"><td class="num">'+E(i.number)+(retryOf[i.id]?'<span class="retry" title="Created by the retry of '+E(retryOf[i.id])+'">retry ✓</span>':'')+'</td><td class="cust"><b>'+E(i.customer_name)+'</b><span>'+E(i.customer_email)+'</span></td><td class="amt">'+money(i.total_cents,i.currency)+'</td><td><span class="pill '+E(i.status)+'">'+E(i.status[0].toUpperCase()+i.status.slice(1))+'</span></td><td class="when hide-s">'+ago(i.created)+'</td></tr>';
+ const all=[...inv.map(i=>({t:i.created,h:invRow(i)})),...fails.map(f=>({t:f.x.at,h:failRow(f)}))].sort((a,b)=>String(b.t).localeCompare(String(a.t)));
+ document.getElementById('rows').innerHTML=all.map(r=>r.h).join('');
  for(const i of fresh){seen.add(i.id);toast('🐶 New invoice <b>'+E(i.number)+'</b> · '+E(i.customer_name)+' · '+money(i.total_cents,i.currency))}
  const sum=f=>inv.filter(f).reduce((a,i)=>a+i.total_cents,0);
  k1.textContent=money(sum(i=>i.status!=='paid'));k2.textContent=money(sum(i=>i.status==='paid'));k3.textContent=inv.filter(i=>i.status==='open'||i.status==='sent').length;k4.textContent=inv.filter(i=>i.status==='overdue').length;

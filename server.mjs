@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { createInvoice, listInvoices, ApiError, API_VERSION } from './invoices.mjs'
 import { dashboardHtml } from './dashboard.mjs'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const PORT = Number(process.env.PORT ?? 8080)
@@ -37,7 +37,25 @@ if (LOKI_URL) setInterval(() => {
     .then((r) => { if (!r.ok) console.error(`loki push: HTTP ${r.status}`) }).catch((e) => console.error(`loki push: ${e.message}`))
 }, 1000).unref()
 const keyId = (req) => { const k = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, ''); return k ? k.slice(-4) : null }
-const incidents = [] // last few 500s, shown on the dashboard
+// Last few 500s, shown on the dashboard. Persisted to data/incidents.json so a failed request survives the
+// fix deploy's restart and the dashboard can flip it from "Failed" to "Recovered" once the retry lands.
+const INCIDENTS_FILE = path.join(HERE, 'data', 'incidents.json')
+const incidents = (() => { try { const a = JSON.parse(readFileSync(INCIDENTS_FILE, 'utf8')); return Array.isArray(a) ? a.slice(0, 5) : [] } catch { return [] } })()
+function saveIncidents() { try { mkdirSync(path.dirname(INCIDENTS_FILE), { recursive: true }); writeFileSync(INCIDENTS_FILE, JSON.stringify(incidents, null, 2)) } catch (e) { console.error(`incidents save: ${e.message}`) } }
+// A non-secret summary of what the caller asked for, so the dashboard can match the failure to its successful retry.
+function requestSummary(body) {
+  try {
+    if (!body || typeof body !== 'object') return null
+    const items = Array.isArray(body.line_items) ? body.line_items : []
+    return {
+      customer_name: String(body.customer_name ?? '').slice(0, 120),
+      customer_email: String(body.customer_email ?? '').slice(0, 200),
+      currency: String(body.currency ?? 'usd').toLowerCase().slice(0, 8),
+      amount_cents: items.reduce((a, li) => a + (typeof li?.amount === 'number' && Number.isFinite(li.amount) ? Math.round(li.amount * 100) : 0), 0),
+      line_items: items.length,
+    }
+  } catch { return null }
+}
 
 const send = (res, status, body, headers = {}) => {
   res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store', 'access-control-allow-origin': '*', ...headers })
@@ -104,8 +122,9 @@ http.createServer(async (req, res) => {
     const endpoint = `${req.method} ${url.pathname}`
     log('error', { msg: 'unhandled_error', request_id: requestId, method: req.method, path: url.pathname, api_key_id: keyId(req), error_name: e?.name, error_message: e?.message, stack: e?.stack, api_sha: SHA })
     const roomUrl = await openSupportRoom({ requestId, endpoint, method: req.method, request: sanitize(req, body) })
-    incidents.unshift({ request_id: requestId, endpoint, error: `${e.name}: ${e.message}`, room_url: roomUrl, at: new Date().toISOString(), sha: SHA })
+    incidents.unshift({ request_id: requestId, endpoint, error: `${e.name}: ${e.message}`, room_url: roomUrl, at: new Date().toISOString(), sha: SHA, request: requestSummary(body) })
     incidents.splice(5)
+    saveIncidents()
     return send(res, 500, {
       error: 'internal_error',
       message: 'Something went wrong on our side. Our support agent can look into it.',
