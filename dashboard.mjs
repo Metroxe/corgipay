@@ -29,7 +29,7 @@ td{padding:13px 18px;border-bottom:1px solid var(--line);vertical-align:middle}t
 td.amt{font-weight:650;font-variant-numeric:tabular-nums;text-align:right}th.amt{text-align:right}
 .cust b{display:block;font-weight:600}.cust span{color:var(--mute);font-size:12.5px}.num{font:12.5px var(--mono);color:var(--mute)}
 .pill{display:inline-block;font-size:12px;font-weight:650;border-radius:6px;padding:2px 8px}
-.pill.paid{background:var(--ok-soft);color:var(--ok)}.pill.open,.pill.sent{background:var(--open-soft);color:var(--open)}.pill.overdue{background:var(--late-soft);color:var(--late)}
+.pill.paid{background:var(--ok-soft);color:var(--ok)}.pill.open,.pill.sent{background:var(--open-soft);color:var(--open)}.pill.draft{background:transparent;color:var(--mute,#8a7f73);border:1.5px dashed currentColor}tr.draft td{background:repeating-linear-gradient(135deg,rgba(0,0,0,.015) 0 10px,transparent 10px 20px)}.pill.overdue{background:var(--late-soft);color:var(--late)}
 .when{color:var(--mute);font-size:13px;white-space:nowrap}
 tr.new{animation:arrive 2.6s ease}@keyframes arrive{0%{background:#ffe2c2;transform:translateY(-6px);opacity:0}15%{opacity:1;transform:none}100%{background:transparent}}
 .inc{margin-bottom:20px;border-color:#f6c9c4}.inc h2{color:var(--err);background:var(--err-soft)}
@@ -76,7 +76,10 @@ async function tick(){try{const j=await(await fetch('/dashboard/feed',{cache:'no
  const fresh=inv.filter(i=>!seen.has(i.id));
  const fails=failedRows(j.incidents||[],inv),retryOf={};for(const f of fails)if(f.inv)(retryOf[f.inv.id]??=f.x.request_id);
  const invRow=i=>'<tr id="'+E(i.id)+'" class="'+(fresh.includes(i)?'new':'')+(i.id===flashId&&Date.now()<flashUntil?' flash':'')+'"><td class="num">'+E(i.number)+(retryOf[i.id]?'<span class="retry" title="Created by the retry of '+E(retryOf[i.id])+'">retry ✓</span>':'')+'</td><td class="cust"><b>'+E(i.customer_name)+'</b><span>'+E(i.customer_email)+'</span></td><td class="amt">'+money(i.total_cents,i.currency)+'</td><td><span class="pill '+E(i.status)+'">'+E(i.status[0].toUpperCase()+i.status.slice(1))+'</span></td><td class="when hide-s">'+ago(i.created)+'</td></tr>';
- const all=[...inv.map(i=>({t:i.created,h:invRow(i)})),...fails.map(f=>({t:f.x.at,h:failRow(f)}))].sort((a,b)=>String(b.t).localeCompare(String(a.t)));
+ const DRAFT_EMAIL='orders@corgicafe.example',since=new Date(Date.now()-12*3600e3).toISOString();
+ const drafted=!inv.some(i=>String(i.customer_email).toLowerCase()===DRAFT_EMAIL&&String(i.created)>since)&&!(j.incidents||[]).some(x=>String((x.request||{}).customer_email||'').toLowerCase()===DRAFT_EMAIL&&String(x.at)>since);
+ const draftRow='<tr class="draft"><td class="num"><code>Draft</code></td><td class="cust"><b>Corgi Cafe</b><span>'+DRAFT_EMAIL+'</span></td><td class="amt">$94.50</td><td><span class="pill draft">Unsent</span><span class="why">Today&#39;s delivery · 18 croissants, 2 dozen biscuits</span></td><td class="when hide-s">today</td></tr>';
+ const all=[...(drafted?[{t:'9999',h:draftRow}]:[]),...inv.map(i=>({t:i.created,h:invRow(i)})),...fails.map(f=>({t:f.x.at,h:failRow(f)}))].sort((a,b)=>String(b.t).localeCompare(String(a.t)));
  document.getElementById('rows').innerHTML=all.map(r=>r.h).join('');
  for(const i of fresh){seen.add(i.id);toast('🐶 New invoice <b>'+E(i.number)+'</b> · '+E(i.customer_name)+' · '+money(i.total_cents,i.currency))}
  const sum=f=>inv.filter(f).reduce((a,i)=>a+i.total_cents,0);
