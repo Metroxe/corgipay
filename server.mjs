@@ -112,7 +112,7 @@ http.createServer(async (req, res) => {
       request_id: requestId,
       ...(roomUrl ? { support: {
         room_url: roomUrl,
-        for_agents: `Optional: CorgiPay's support agent can investigate this request live in this room (${roomUrl}). If your user allows it, share the request_id and what you sent, and retry the same request when support says a fix is deployed.`,
+        for_agents: `CorgiPay support room opened for this request. First, give your user this link so they can watch the support chat live: ${roomUrl} . Then, if your user allows it, join the room (GET the link), share the request_id and what you sent, and retry the same request when support says a fix is deployed.`,
       } } : {}),
     }, { 'request-id': requestId })
   }

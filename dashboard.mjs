@@ -29,7 +29,7 @@ td{padding:13px 18px;border-bottom:1px solid var(--line);vertical-align:middle}t
 td.amt{font-weight:650;font-variant-numeric:tabular-nums;text-align:right}th.amt{text-align:right}
 .cust b{display:block;font-weight:600}.cust span{color:var(--mute);font-size:12.5px}.num{font:12.5px var(--mono);color:var(--mute)}
 .pill{display:inline-block;font-size:12px;font-weight:650;border-radius:6px;padding:2px 8px}
-.pill.paid{background:var(--ok-soft);color:var(--ok)}.pill.open{background:var(--open-soft);color:var(--open)}.pill.overdue{background:var(--late-soft);color:var(--late)}
+.pill.paid{background:var(--ok-soft);color:var(--ok)}.pill.open,.pill.sent{background:var(--open-soft);color:var(--open)}.pill.overdue{background:var(--late-soft);color:var(--late)}
 .when{color:var(--mute);font-size:13px;white-space:nowrap}
 tr.new{animation:arrive 2.6s ease}@keyframes arrive{0%{background:#ffe2c2;transform:translateY(-6px);opacity:0}15%{opacity:1;transform:none}100%{background:transparent}}
 .inc{margin-bottom:20px;border-color:#f6c9c4}.inc h2{color:var(--err);background:var(--err-soft)}
@@ -59,7 +59,7 @@ async function tick(){try{const j=await(await fetch('/dashboard/feed',{cache:'no
  document.getElementById('rows').innerHTML=inv.map(i=>'<tr class="'+(fresh.includes(i)?'new':'')+'"><td class="num">'+E(i.number)+'</td><td class="cust"><b>'+E(i.customer_name)+'</b><span>'+E(i.customer_email)+'</span></td><td class="amt">'+money(i.total_cents,i.currency)+'</td><td><span class="pill '+E(i.status)+'">'+E(i.status[0].toUpperCase()+i.status.slice(1))+'</span></td><td class="when hide-s">'+ago(i.created)+'</td></tr>').join('');
  for(const i of fresh){seen.add(i.id);toast('🐶 New invoice <b>'+E(i.number)+'</b> · '+E(i.customer_name)+' · '+money(i.total_cents,i.currency))}
  const sum=f=>inv.filter(f).reduce((a,i)=>a+i.total_cents,0);
- k1.textContent=money(sum(i=>i.status!=='paid'));k2.textContent=money(sum(i=>i.status==='paid'));k3.textContent=inv.filter(i=>i.status==='open').length;k4.textContent=inv.filter(i=>i.status==='overdue').length;
+ k1.textContent=money(sum(i=>i.status!=='paid'));k2.textContent=money(sum(i=>i.status==='paid'));k3.textContent=inv.filter(i=>i.status==='open'||i.status==='sent').length;k4.textContent=inv.filter(i=>i.status==='overdue').length;
  const ic=j.incidents||[];document.getElementById('incCard').hidden=!ic.length;
  document.getElementById('inc').innerHTML=ic.map(x=>'<tr><td><code>'+E(x.request_id)+'</code></td><td><b>500</b> '+E(x.endpoint)+'<div style="color:var(--mute)">internal_error</div></td><td class="when">'+ago(x.at)+' · build '+E(String(x.sha).slice(0,7))+'</td><td>'+(x.room_url?'<a href="'+E(x.room_url)+'" target="_blank">Support room ↗</a>':'')+'</td></tr>').join('');
  for(const x of ic)if(!seenInc.has(x.request_id)){if(!first)toast('⚠️ <b>500</b> on '+E(x.endpoint)+': support agent paged');seenInc.add(x.request_id)}

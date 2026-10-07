@@ -13,7 +13,7 @@ test('invoices fractional-dollar amounts without truncating cents', () => {
 
 test('invoices whole-dollar line items', () => {
   const i = inv([{ description: 'Website redesign', amount: 1200 }])
-  assert.equal(i.status, 'open')
+  assert.equal(i.status, 'sent')
   assert.equal(i.subtotal_cents, 120000)
   assert.equal(i.fee_cents, 3510)
 })

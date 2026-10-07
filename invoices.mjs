@@ -22,8 +22,8 @@ const SEED = [
   { customer_name: 'Sunrise Coffee', customer_email: 'orders@sunrisecoffee.example', currency: 'usd', status: 'paid', ago: 5 * day, line_items: [{ description: '40 butter croissants', amount: 130 }, { description: '3 dozen biscuits', amount: 54 }] },
   { customer_name: 'Paws & Pour', customer_email: 'billing@pawsandpour.example', currency: 'usd', status: 'paid', ago: 3 * day, line_items: [{ description: 'Weekly pastry order', amount: 212 }] },
   { customer_name: 'The Loaf Lounge', customer_email: 'ap@loaflounge.example', currency: 'usd', status: 'overdue', ago: 2 * day, line_items: [{ description: 'Sourdough loaves x 24', amount: 168 }] },
-  { customer_name: 'Sunrise Coffee', customer_email: 'orders@sunrisecoffee.example', currency: 'usd', status: 'open', ago: 20 * 3_600_000, line_items: [{ description: 'Morning delivery: croissants, scones', amount: 96 }] },
-  { customer_name: 'Paws & Pour', customer_email: 'billing@pawsandpour.example', currency: 'usd', status: 'open', ago: 19 * 3_600_000, line_items: [{ description: 'Morning delivery: cinnamon rolls x 30', amount: 105 }] },
+  { customer_name: 'Sunrise Coffee', customer_email: 'orders@sunrisecoffee.example', currency: 'usd', status: 'sent', ago: 20 * 3_600_000, line_items: [{ description: 'Morning delivery: croissants, scones', amount: 96 }] },
+  { customer_name: 'Paws & Pour', customer_email: 'billing@pawsandpour.example', currency: 'usd', status: 'sent', ago: 19 * 3_600_000, line_items: [{ description: 'Morning delivery: cinnamon rolls x 30', amount: 105 }] },
 ]
 
 let invoices = null
@@ -80,7 +80,7 @@ export function fee(subtotalCents) {
   return (subtotalCents * FEE_BPS + 5000n) / 10000n + FEE_FIXED_CENTS
 }
 
-function build(input, createdAt = new Date().toISOString(), status = 'open') {
+function build(input, createdAt = new Date().toISOString(), status = 'sent') {
   const items = input.line_items.map((li) => ({ description: String(li.description ?? '').slice(0, 200), amount_cents: toCents(li.amount) }))
   const subtotal = items.reduce((a, li) => a + li.amount_cents, 0n)
   const f = fee(subtotal)
