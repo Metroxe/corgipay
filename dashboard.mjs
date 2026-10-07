@@ -1,6 +1,6 @@
 // The CorgiPay billing dashboard: one self-contained page that polls /dashboard/feed every second.
 export const dashboardHtml = () => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CorgiPay · Biscuit Bakery</title>
+<title>CorgiPay · Biscuit Bakery</title><link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDY0IDY0Ij48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImNwZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI0ZGQjA1NCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI0UwNjUwQyIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE4IiBmaWxsPSJ1cmwoI2NwZykiLz48cGF0aCBkPSJNMTguNSAyNS41IEwyMC41IDExIEwyOSAyMC41IFogTTQ1LjUgMjUuNSBMNDMuNSAxMSBMMzUgMjAuNSBaIiBmaWxsPSIjZmZmIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTQzLjMgMjguNiBBMTQuNSAxNC41IDAgMSAwIDQzLjMgNDUuNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjcuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGNpcmNsZSBjeD0iNDQuNSIgY3k9IjM3IiByPSI0LjYiIGZpbGw9IiMyQTFBMEUiLz48L3N2Zz4=">
 <style>
 :root{--bg:#fbf8f3;--side:#fff;--card:#fff;--fg:#1f1a14;--mute:#7a6f63;--line:#efe7dc;--brand:#f08a24;--brand-soft:#fff1e2;--brand-ink:#b45f0c;
 --ok:#18794e;--ok-soft:#e5f5ec;--open:#2463eb;--open-soft:#e8efff;--late:#c2410c;--late-soft:#ffede3;--err:#d92d20;--err-soft:#fdecea;
@@ -9,7 +9,7 @@ export const dashboardHtml = () => `<!doctype html><html lang="en"><head><meta c
 .app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
 aside{background:var(--side);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:18px;letter-spacing:-.02em;margin:0 6px 18px}
-.brand .mark{width:32px;height:32px;border-radius:10px;background:var(--brand);display:inline-flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 4px 12px rgba(240,138,36,.35)}
+.brand .mark{width:32px;height:32px;border-radius:10px;background:none;display:inline-flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 4px 12px rgba(240,138,36,.35)}
 .nav{padding:7px 10px;border-radius:8px;color:var(--mute);font-weight:550;display:flex;gap:9px;align-items:center}
 .nav.on{background:var(--brand-soft);color:var(--brand-ink)}
 .test{margin-top:auto;font:600 11px var(--mono);color:var(--brand-ink);background:var(--brand-soft);border-radius:6px;padding:6px 8px;text-align:center}
@@ -44,7 +44,7 @@ tr.flash td{background:#c9f0d8}
 .toast.show{transform:none}.toast b{color:#ffb469}
 @media(max-width:860px){.app{grid-template-columns:1fr}aside{display:none}.kpis{grid-template-columns:1fr 1fr}main{padding:18px 16px}.hide-s{display:none}}
 </style></head><body><div class="app">
-<aside><div class="brand"><span class="mark">🐶</span>CorgiPay</div><div class="acct">🥐 Biscuit Bakery<small>Wholesale · test mode</small></div>
+<aside><div class="brand"><span class="mark"><svg width="32" height="32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="cpg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB054"/><stop offset="1" stop-color="#E0650C"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#cpg)"/><path d="M18.5 25.5 L20.5 11 L29 20.5 Z M45.5 25.5 L43.5 11 L35 20.5 Z" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/><path d="M43.3 28.6 A14.5 14.5 0 1 0 43.3 45.4" fill="none" stroke="#fff" stroke-width="7.5" stroke-linecap="round"/><circle cx="44.5" cy="37" r="4.6" fill="#2A1A0E"/></svg></span><span>Corgi<span style="color:var(--brand-ink)">Pay</span></span></div><div class="acct">🥐 Biscuit Bakery<small>Wholesale · test mode</small></div>
 <div class="nav">⌂ Home</div><div class="nav on">▤ Invoices</div><div class="nav">☺ Customers</div><div class="nav">⇄ Payments</div><div class="nav">⚙ Developers</div>
 <div class="test">TEST MODE</div></aside>
 <main><div class="top"><h1>Invoices <span class="sub">CorgiPay · Biscuit Bakery</span></h1><span class="live"><i></i>Live</span><span class="sp"></span><span class="build" id="build"></span><button class="btn">+ Create invoice</button></div>
