@@ -84,7 +84,7 @@ async function tick(){try{const j=await(await fetch('/dashboard/feed',{cache:'no
  for(const i of fresh){seen.add(i.id);toast('🐶 New invoice <b>'+E(i.number)+'</b> · '+E(i.customer_name)+' · '+money(i.total_cents,i.currency))}
  const sum=f=>inv.filter(f).reduce((a,i)=>a+i.total_cents,0);
  k1.textContent=money(sum(i=>i.status!=='paid'));k2.textContent=money(sum(i=>i.status==='paid'));k3.textContent=inv.filter(i=>i.status==='open'||i.status==='sent').length;k4.textContent=inv.filter(i=>i.status==='overdue').length;
- const ic=j.incidents||[];document.getElementById('incCard').hidden=!ic.length;
+ const ic=(j.incidents||[]).filter(x=>!fails.some(f=>f.inv&&f.x.request_id===x.request_id));document.getElementById('incCard').hidden=!ic.length;
  document.getElementById('inc').innerHTML=ic.map(x=>'<tr><td><code>'+E(x.request_id)+'</code></td><td><b>500</b> '+E(x.endpoint)+'<div style="color:var(--mute)">internal_error</div></td><td class="when">'+ago(x.at)+' · build '+E(String(x.sha).slice(0,7))+'</td><td>'+(x.room_url?'<a href="'+E(x.room_url)+'" target="_blank">Support room ↗</a>':'')+'</td></tr>').join('');
  for(const x of ic)if(!seenInc.has(x.request_id)){if(!first)toast('⚠️ <b>500</b> on '+E(x.endpoint)+': support agent paged');seenInc.add(x.request_id)}
 }catch(e){}}
