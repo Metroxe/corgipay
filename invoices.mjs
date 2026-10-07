@@ -73,7 +73,7 @@ export function checkVersion(headers) {
 export function toCents(amount) {
   if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) throw new ApiError(400, 'invalid_amount', 'Each line item `amount` must be a positive number, e.g. 49.50.')
   if (Math.abs(amount * 100 - Math.round(amount * 100)) > 1e-6) throw new ApiError(400, 'invalid_amount', 'Line item amounts can have at most 2 decimal places.')
-  return BigInt(amount) * 100n
+  return BigInt(Math.round(amount * 100))
 }
 
 export function fee(subtotalCents) {
